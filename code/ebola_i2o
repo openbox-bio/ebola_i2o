@@ -1,0 +1,590 @@
+#! /usr/bin/perl -w
+use strict;
+use File::Path qw/make_path/;
+use File::SortedSeek ':all';
+
+#
+#This pipeline processes data from the FILO chip
+#
+#
+print "Code Is Processing\n";
+use constant {
+  CODE_PATH => "/home/anjan-purkayastha/Documents/openboxbio/FDA/20150527_ebola_chip_duncan_FDA/ebov_pipeline/openboxstream_ebov/code",
+  EBOV_CHIP_PARENT_CHILD_MAP =>"/home/anjan-purkayastha/Documents/openboxbio/FDA/20150527_ebola_chip_duncan_FDA/ebov_pipeline/openboxstream_ebov/data/ebov_chip_parent_child_map",
+  BLAST_DB_PATH => "/home/anjan-purkayastha/Documents/openboxbio/FDA/20150527_ebola_chip_duncan_FDA/ebov_pipeline/openboxstream_ebov/db/filovir_db",
+  BLAST_DB_NAME => "filovir",
+  MASTER_PATH => "/home/anjan-purkayastha/Documents/openboxbio/FDA/20150527_ebola_chip_duncan_FDA/ebov_pipeline/openboxstream_ebov/data",
+  ACC2TAXID_PATH => "/home/anjan-purkayastha/Documents/openboxbio/FDA/20150527_ebola_chip_duncan_FDA/ebov_pipeline/openboxstream_ebov/db/filovir_db/nucl_gb.accession2taxid",
+  NAMES_DMP_PATH => "/home/anjan-purkayastha/Documents/openboxbio/FDA/20150527_ebola_chip_duncan_FDA/ebov_pipeline/openboxstream_ebov/db/filovir_db/names.dmp"
+};
+
+
+###########################################################################################################################
+#create a timestamp for execution start time. This timestamp will be added to the final file names as a unique identifier.#
+###########################################################################################################################
+my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime();
+$year+=1900;
+$mon++;
+my $date= join "\/",($mon,$mday,$year);
+my $time= join ":", ($hour,$min,$sec);
+my $timestamp= join ", ", ($date,$time);
+my $label= join "_", ($year,$mon,$mday,$hour,$min,$sec);
+
+#########################################################################################################################################
+#ebov_i2o takes a single argument- the input file name. It parses the fasta file and stores it in a hash- %seq; hash key= tile name.    #
+#########################################################################################################################################
+my $path_to_input_file = $ARGV[0];
+
+my @path_to_input_file = split/\//, $path_to_input_file;
+
+my $SAMPLE = pop(@path_to_input_file);
+my $INPUT_PATH = join "/", @path_to_input_file;
+
+open (F, $path_to_input_file) || die "cannot open file to read:$!";
+
+my %aseq; # a hash of arrays to store the sequence; hash key= tile name.
+my $key;
+while(<F>){
+    chomp;
+    if(/^>/){
+       my @defline= split/:/;
+       $defline[0]=~ s/>//;
+       $key= $defline[0];
+       next;
+    }
+
+    push @{$aseq{$key}},uc($_);
+}
+close(F);
+
+my %seq; #the hash that stores the concatenated tile sequences
+foreach my $k (keys %aseq){
+  $seq{$k}= join "", @{$aseq{$k}};
+  #print ">",$k,"\n",$seq{$k},"\n"; #test code to ensure that tile sequences are stored correctly in the %seq hash.
+}
+
+#################################################################################################################################################################################
+#This code block creates a consensus tile sequences for those sequences that have been multiply tiled. See  /home/Duncan.Lab/filovirus_pipeline/data/ebov_chip_parent_child_map
+#for tile mapping details.
+#For a subset of the child tiles we add Ns to the start or end to account for offset.
+#Consensus is created by the plurality rule.
+#################################################################################################################################################################################
+my %mult_map_tiles; # a hash of arrays to hold each mapping instance for a given tile. Key= tile id; value= array with sequence of each mapping instance.
+my %cons_seq; # a hash to hold the final consensus sequence.
+my %tilenames; # a hash to hold the name of each tile that is multiply tiled as a subset of other tiles. In this context, it is the child tile; the parent tile being the tile of which a subset is the child tile.
+open(F, EBOV_CHIP_PARENT_CHILD_MAP);
+my $header = <F>;
+my $count= 2;
+while(<F>){
+chomp;
+my @line= split/\s+/;
+my $child= $line[0];
+my $parent= $line[1];
+my $offset= $line[2]-1;
+my $length= $line[3]-$line[2]+1;
+$tilenames{$child}++;
+my $substr= substr($seq{$parent}, $offset, $length);
+##############################################################
+#Rules to account for offsets between child and parent tiles.
+##############################################################
+my $base = "N";
+if(($child eq "FILO_BDBV_GP_V6005") & ($parent eq "FILO_BDBV_GP")){
+  my $nstring = $base x 46;
+  $substr= $nstring.$substr;
+}
+
+if(($child eq "FILO_EBOV_GP_V6005a") & ($parent eq "FILO_EBOV_GP_V6005b")){
+  my $nstring = $base x 2;
+  $substr= $nstring.$substr;
+}
+
+if(($child eq "FILO_EBOV_GP_V6005a") & ($parent eq "FILO_EBOV_GP")){
+  my $nstring = $base x 46;
+  $substr= $nstring.$substr;
+  #print $child,"\t",$parent,"\n",$substr,"\n";
+}
+
+if(($child eq "FILO_SUDV_GP_V6005") & ($parent eq "FILO_SUDV_GP")){
+  my $nstring = $base x 46;
+  $substr= $nstring.$substr;
+}
+
+if(($child eq "FILO_TAFV_GP_V6005") & ($parent eq "FILO_TAFV_GP")){
+  my $nstring = $base x 44;
+  $substr= $nstring.$substr;
+}
+
+if(($child eq "FILO_EBOV_NP__V2457") & ($parent eq "FILO_EBOV_NP")){
+  my $nstring = $base x 30;
+  $substr= $substr.$nstring;
+}
+
+if(($child eq "FILO_TAFV_NP_V2457") & ($parent eq "FILO_TAFV_NP")){
+  my $nstring = $base x 30;
+  $substr= $substr.$nstring;
+}
+
+if(($child eq "FILO_SUDV_NP_V2457a") & ($parent eq "FILO_SUDV_NP")){
+  my $nstring = $base x 33;
+  my $substr= $substr.$nstring;
+}
+
+push @{$mult_map_tiles{$child}}, $substr;
+}
+
+#add the child tile sequence to the %multi_map_tiles.
+foreach my $m (keys %tilenames){
+push @{$mult_map_tiles{$m}}, $seq{$m};
+}
+
+foreach my $k (keys %mult_map_tiles){
+  $seq{$k}= make_consensus($mult_map_tiles{$k}, $k);
+}
+
+
+######################################################################################################
+#Calculate the C3 score for each tile and store it in the %c3 hash; hash key=tile name.
+#Count the number of Ns in the tile sequence. Print Ebola tiles (FILO...) sequences in a temp file
+#for BLASTing.
+######################################################################################################
+$SAMPLE=~ s/\.txt//;
+my $indices = rindex($SAMPLE,"/");
+$SAMPLE= substr $SAMPLE, $indices+1, length($SAMPLE)-$indices;
+my $STRAIN=$SAMPLE;
+my %c3; #hash to store C3 scores;
+my %ncount; #hash to store N counts.
+my $blastInputFile= $SAMPLE."\.blast\.in\.fst"; #query file for BLAST.
+my $blastOutFile= $SAMPLE."\.blast\.report";
+my $detailedBlastOutFile= $SAMPLE."\.blast\.detailed\.report\.html";
+my $count_of_tiles_with_C3_gte_20 = 0; #a counter to keep track of number of tiles with C3 score gte 20.
+my %filo;
+open (W,">$blastInputFile");
+
+my @filo_keys= grep {/^FILO/} keys %seq;
+foreach my $k (@filo_keys){
+      my $seq= $seq{$k};
+      #print W ">".$k,"\n",$seq,"\n";
+      $ncount{$k}= ()= $seq=~ /N/g;
+      my @runs= split/N+/, $seq;
+      my $c3= "";
+      foreach my $r (@runs){
+          if(length($r)>=3){
+              $c3.=$r;
+            }
+          }
+          $c3{$k}= sprintf "%0.2f", 100*length($c3)/length($seq);
+            $filo{$k}=$c3{$k};
+}
+
+foreach my $k (sort {$filo{$b} <=> $filo{$a} } keys %filo){
+  print W ">".$k,"\n",$seq{$k},"\n";                     # Tiles are printed in descending C3 score order for BlASTing to $SAMPLE.blast.in.fst.
+}
+close(W);
+
+#Map each required host volume to the correct docker volume. /blastdb,/input, /reference are all directories in the ebola_i2o_tools container.
+my $blastdb_volume_map = BLAST_DB_PATH.":"."\/blastdb";
+my $input_file_volume_map = CODE_PATH.":"."\/input";
+my $reference_volume_map = MASTER_PATH.":"."\/reference";
+my $docker_blast_db = "\/blastdb\/".BLAST_DB_NAME;
+my $docker_input_file = "\/input\/".$blastInputFile;
+
+#Blast each tile against the Ebola sequence database.
+open(NTBLASTRUN,"docker run --rm -v $blastdb_volume_map -v $input_file_volume_map ebola_i2o blastn -task blastn -db $docker_blast_db -query $docker_input_file  -max_target_seqs 3 -num_threads 40 -outfmt \"6 qseqid bitscore evalue sacc\"| ");
+my @ntblastop= <NTBLASTRUN>;
+chomp(@ntblastop);
+
+open (W,">$blastOutFile");
+print W "Sample:", $SAMPLE,"\n\n";
+print W "Pipeline Execution started on:", $timestamp,"\n\n";
+print W "Tile ID","\t","C3 Score","\t","Bit-score","\t","E-value","\t","Accession number","\t","Scientific Name","\n";
+foreach my $op (@ntblastop){
+  my @result= split/\t/, $op;
+  my $tile= $result[0];
+  my $scientific_name = getScientificName($result[3]);
+  if($c3{$tile}>= 20){
+    $count_of_tiles_with_C3_gte_20++;
+    print W $tile,"\t",$c3{$tile},"\t", $result[1],"\t",$result[2],"\t",$result[3],"\t",$scientific_name,"\n";
+  }
+}
+
+if ($count_of_tiles_with_C3_gte_20 == 0){
+  print W "No tiles with C3 score greater than 20. Possibly no Ebola virus present in sample or a case of bad sample preparation.\n";
+  exit;
+}
+close(W);
+
+
+################################################################################
+#Second BLAST run to produce the detailed HTML report. Shut-off in this version
+#####################################################################################
+# system("blastn -task blastn -query $blastInputFile  -db $BLAST -num_threads 4 -html -out $detailedBlastOutFile");
+system ("rm -rf $blastInputFile"); #remove the input file once BLAST report has been parsed.
+
+###########################################################################################################################
+#Create block specific hashes to identify tile with the highest C3 score that needs to be aligned with each block profile.
+###########################################################################################################################
+my %c1049;
+my %v11634;
+my %c13637;
+my %c1396;
+my %c14053;
+my %v15698;
+my %v16158;
+my %v17336;
+my %v2457;
+my %c4908;
+my %v6005;
+my %c6481;
+my %v7490;
+
+my @hashrefs= (\%c1049,\%v11634, \%c13637,\%c1396, \%c14053,\%v15698,\%v16158,\%v17336,\%v2457,\%c4908,\%v6005,\%c6481,\%v7490);
+my @tile_ids=(1049,11634, 13637,1396,14053,15698,16158,17336,2457,4908,6005,6481,7490);
+
+my $tileFileList= $SAMPLE."\.files\.list";
+open(V,">$tileFileList"); # create the list file
+
+for (my $i=0; $i<=$#tile_ids; $i++){
+  chooseTileWithHighestC3($hashrefs[$i],$tile_ids[$i]);
+}
+
+close(V);
+
+#####################################################################################################################################################################################################################
+#This code block creates a multiple sequence alignment for each tile sequence by adding it to the correct reference tile alignment. Each alignment is then stored in the original tile file <sample_name>_<tile_name>. #
+#All mulitple sequence alignment files are then concatenated and the resulted stored in the PHYLIP format as: <sample_name>_master_aln_phy.A second file <sample_name>_master_aln.fst is created in the FASTA format#
+#A phylogenetic tree is then created by the program phyML. The final output is two files: <sample_name>_master_aln_phy_phyml_stats.txt and <sample_name>_master_aln_phy_phyml_tree.txt.                             #
+#Ensure that (a) muscle (b) phyML and (c) nwutils are installed.                                                                                                                                                    #
+#####################################################################################################################################################################################################################
+
+my $master_reference_aln_files_list= MASTER_PATH."\/list";
+
+open(F, "$master_reference_aln_files_list"); #read in the list of master reference alignments.
+my @aln_list=<F>;
+chomp(@aln_list);
+close(F);
+
+open(F, "$tileFileList"); #read in the list of input tile fasta files.
+my @seq_list=<F>;
+chomp(@seq_list);
+close(F);
+system("rm $tileFileList");
+
+##############################################################################################################################################
+#Add the test sequence to its corresponding alignment profile. Save the resulting alignment as *.input.fst- the input tile fasta file.
+##############################################################################################################################################
+my @alignment_files_list; # a list to hold the alignment file names. This will be used to create the concatenated input file for PhyML
+foreach my $s (sort @seq_list){
+    foreach my $a (sort @aln_list){
+       my $a_name= $a;
+       $a_name=~ s/\.master\.fst//;
+       my $s_name= $s;
+       $s_name=~ s/\.input\.fst|$SAMPLE\.//g;
+       if($a_name eq $s_name){
+            my $docker_input_profile= "/reference/".$a; #path to input_profile file within container.
+            my $docker_input_seq = "/input/".$s; #path to input_seq file within container.
+            my $out= $s;
+            $out =~ s/input\.fst/output\.fst/;
+            my $docker_out_file = "/input/".$out; #path to output file within container.
+            system ("docker run --rm -v $input_file_volume_map -v $reference_volume_map ebola_i2o muscle -profile -in1 $docker_input_profile -in2 $docker_input_seq -out $docker_out_file");
+            push(@alignment_files_list, $out);
+            system("rm -rf $s");
+       }
+    }
+}
+
+########################
+#end of alignment step.
+########################
+
+
+##########################################################################################################################################################################
+#In this section each tile alignment file is concatenated to create a master alignment file.                                                                             #                                                                     #
+#The result is stored in the file <sample_name>_master_aln.phy. Sequences are stored in the sequential PHYLIP format.                                                    #
+##########################################################################################################################################################################
+my %master; # a hash to store each sequence in the alignment in a hash of arrays; key= sequence id from fasta defline; hash value=sequence.
+
+foreach my $f (sort @alignment_files_list){
+    my $key;
+    open(F, "$f");
+    while(<F>){
+        chomp;
+        if(/>/){
+            $key=$_;
+            next;
+        }
+        push @{$master{$key}}, $_;
+    }
+    close(F);
+}
+
+my @keys= sort keys %master;
+
+
+my @aoa;
+foreach my $k (@keys){ # in this step, each hash of arrays is transformed into an element in an array of arrays.
+    my $seq = join "", @{$master{$k}};
+    #print $k, "\n", $seq, "\n"; #test code.
+    #print $k, "\n";  #test code.
+    my @seq= split "", $seq;
+   push @aoa, [@seq];
+}
+
+my $master_name= $SAMPLE;
+$master_name=~ s/\.files\.list//;
+my $master_name2= $master_name."_alignment_phy";
+my $sample_name=$master_name;
+
+####################################################
+#Code to print in the FASTA format.                #
+####################################################
+$master_name.="_master_aln\.fst";
+
+my %forPhylip;
+open(W, ">$master_name");
+
+for my $r (0..$#aoa){
+    my $seq= join "", @{$aoa[$r]};
+    $seq=~ s/\s//g;
+    print W $keys[$r],"\n",$seq, "\n"; #print in the FASTA format.
+    $forPhylip{$keys[$r]}=$seq;
+}
+close(W);
+
+push (@alignment_files_list, $master_name); # push the master alignment file name into the alignment files list
+
+####################################################
+#Code to print in the PHYLIP format.               #
+####################################################
+@keys= sort keys %forPhylip;
+
+open(W, ">$master_name2");
+my $taxa= @keys;
+my $seq_len= length($forPhylip{$keys[0]});
+
+print W " ",$taxa," ", $seq_len, "\n";
+my $start=0;
+while($seq_len>0){
+    if($start ==0){
+        foreach my $k (@keys){
+         my $id= $k;
+         $id=~ s/>//;
+         while (length($id)<= 10){
+         $id.=" ";
+         }
+         my $sub_seq= substr($forPhylip{$k}, 0, 50);
+         print W $id, $sub_seq, "\n";
+         }
+    }else{
+        foreach my $k (@keys){
+        my $sub_seq= substr($forPhylip{$k}, $start, 50);
+        print W "           ",$sub_seq, "\n";
+        }
+    }
+    $start+=50;
+    $seq_len-=50;
+    print W "\n";
+}
+
+close(W);
+
+###########
+#Run phyML#
+###########
+my $docker_master_name2 = "/input/".$master_name2;
+system ("docker run --rm -v $input_file_volume_map ebola_i2o phyml -s NNI -m GTR -i $docker_master_name2 --quiet");
+
+#################################################################################################################################################
+#This block of code substitutes the accession number with the string <accession number>|<strain name>. This improves the readability of the tree.
+#The map is stored in the data folder. It is read into a hash $map. In the tree that is the result of phyml, the map is
+#used to substitute the accession name with <accession number>|<strain name>.
+#################################################################################################################################################
+my $path_to_map= MASTER_PATH."\/map";
+my %map;
+open (F, $path_to_map);  #path to the Filoviridae accession-name map file.
+while(<F>){
+    chomp;
+    my @line= split/\t/;
+    $map{$line[0]}=$line[1];
+}
+
+my $newickFile= $master_name2."_phyml_tree\.txt";
+my $newickFile2= $master_name2."with_strain_names_phyml_tree\.txt";
+open(F, $newickFile);
+my $n=<F>;
+foreach my $m (keys %map){
+  my $display_name= $m."\|".$map{$m};
+  $n=~ s/$m/$display_name/;
+}
+
+open(W, ">$newickFile2");
+print W $n;
+close(F);
+close(W);
+
+###################################################################################################################
+#This block of code orders the sequences in the master alignment file in the same order as the phylogenetic tree.
+#It uses newick_utils
+###################################################################################################################
+my $docker_newickFile = "\/input\/".$newickFile;
+
+open(LABELS, "docker run --rm -v $input_file_volume_map ebola_i2o nw_labels -I $docker_newickFile |"); #use nw_labels command to get the ordered nodes.
+my @ordered_nodes = <LABELS>;
+chomp(@ordered_nodes);
+@ordered_nodes= reverse(@ordered_nodes);
+
+foreach my $alignment_file (@alignment_files_list){
+  my %final_alignment;
+  open(F,"< $alignment_file");
+  while(<F>){
+    chomp;
+    if(/>/){
+      $key= $_;
+      next;
+    }
+    push @{$final_alignment{$key}},$_;
+  }
+  close(F);
+
+  foreach my $key (sort keys %final_alignment){
+    my $seq= join "", @{$final_alignment{$key}};
+    $final_alignment{$key}=$seq;
+  }
+  my $ordered_alignment_file = $alignment_file;
+  $ordered_alignment_file =~ s/fst/ordered_alignment\.fst/;
+  open (W, "> $ordered_alignment_file");
+  foreach my $node (@ordered_nodes){
+	   my $key_node =">".$node;
+	    print W $key_node,"\n",$final_alignment{$key_node},"\n";
+    }
+    close(W);
+
+    system("rm -rf $alignment_file"); #remove the file with the unordered alignment.
+  }
+
+system("rm -rf $newickFile");
+
+######################################################################################################################################################################################################################
+#This code block creates a directory with the same name as the sample; subdirectories, alignments and phylogeny, to store alignment and phylogeny files are created. All result files and the input_tile_files_list
+#and the input sample file are stored in the directory.
+######################################################################################################################################################################################################################
+my $RESULTS= $INPUT_PATH."\/".$SAMPLE."_".$label; #assign a name to the results directory.
+make_path("$RESULTS");
+my $ALN= "$RESULTS\/alignments";
+my $PHY= "$RESULTS\/phylogeny";
+make_path("$ALN");
+make_path("$PHY");
+my $alnFilePattern= $SAMPLE."\*\.fst";
+my @list_fst= glob("$alnFilePattern");
+foreach my $l (@list_fst){
+  system("mv $l $ALN");
+}
+
+my $phyFilePattern= $SAMPLE."\*phy\*";
+my @list_phy= glob("$phyFilePattern");
+foreach my $l (@list_phy){
+  system("mv $l $PHY");
+}
+
+my $fileNamePattern= $SAMPLE."\.\*";
+my @list= glob("$fileNamePattern");
+foreach my $l (@list){
+  system("mv $l $RESULTS");
+}
+system("mv $path_to_input_file $RESULTS");  #move input file to the RESULTS folder.
+exit;
+
+
+sub make_consensus{
+  my @aoa; # an array of arrays to store the tile sequences
+  my @cons; # an array to store the final consensus.
+  my @seq_array= @{$_[0]};
+  @seq_array= reverse(@seq_array); #reverse the sequence of tiles; the first tile is now the child (main) tile.
+  my $len= length($seq_array[0]);  # store the length of the main tile sequence.
+  my $num_seq= @seq_array;         #store the number of sequences to parse.
+  #print $_[1],"\n";
+  foreach my $s (@seq_array){
+    #print $s,"\n";
+    push @aoa, [ split(//, $s)];
+  }
+
+  CONS: for my $c (0..$len-1){
+    my %counter;
+    for my $r (0..$num_seq-1){
+    	if(defined($aoa[$r][$c])){
+        $counter{$aoa[$r][$c]}++;  # count the number of each base at a given position.
+      }
+    }
+    my @num_bases= sort {$b <=> $a} values %counter; #sort the base counts in descending order.
+    my $max_num= $num_bases[0];
+      if ((defined($counter{'A'})) && ($counter{'A'} == $max_num)){
+        $cons[$c]='A';
+        next CONS;
+      }elsif ((defined($counter{'T'})) && ($counter{'T'} == $max_num)){
+        $cons[$c]='T';
+        next CONS;
+      }elsif ((defined($counter{'G'})) && ($counter{'G'} == $max_num)){
+        $cons[$c]='G';
+        next CONS;
+      }elsif ((defined($counter{'C'})) && ($counter{'C'} == $max_num)){
+        $cons[$c]='C';
+        next CONS;
+      }else{
+        $cons[$c]='N';
+      }
+  }
+
+my $cons= join ("", @cons);
+#print $_[1],"\n",$cons, "\n\n";
+return $cons;
+}
+
+
+sub chooseTileWithHighestC3{
+my %tileC3;
+my ($hashref, $id)= @_;
+my $SAMPLE= $SAMPLE."\.".$id."\.input\.fst";
+
+
+
+foreach my $k (sort keys %c3){
+  if ($k=~/$id/){
+    my $key= $c3{$k};
+    my $value= $seq{$k};
+    $ {$hashref} {$key}=$value;
+  }
+}
+%tileC3= %{$hashref};
+
+my @keys= sort {$b<=>$a} keys %tileC3;
+#############################################################################################################################
+#In this code block the highest scoring tile is printed to a separate file only if the C3 score is >=20. This ensures that
+#in case of plasmid-based experiments only tiles with sequences hybridized are chosen for the alignment and phylogeny step.
+#############################################################################################################################
+
+if($keys[0] >=20){
+open (W,">$SAMPLE");
+print W ">".$STRAIN,"\n",$tileC3{$keys[0]},"\n";   # print the tile sequence with the highest C3 score in the $id.input.fst file with the defline "test_sample"
+print V $SAMPLE,"\n";                              # print input file name into the input_tile_files_list file.
+close(W);
+}
+}
+
+sub getScientificName{
+  open BIG, ACC2TAXID_PATH or die $!;
+
+  my $string = $_[0];
+  my $tell = alphabetic( *BIG, $string );
+  my $line = <BIG>;
+  close(BIG);
+
+  my @line = split/\t/, $line;
+  my $taxid = $line[2];
+
+  open BIG, NAMES_DMP_PATH or die $!;
+
+   $tell = numeric(*BIG, $taxid);
+   $line = <BIG>;
+   my @line = split/\|/, $line;
+   $line[1] =~ s/^\s+|\s+$//g;
+   return $line[1];
+}
