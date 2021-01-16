@@ -1,0 +1,21 @@
+#########################################################################################################################################
+#This settings file stores the path to a set of key files and directories for ebola_i2o.
+#NOTE1: All paths must be entered as a full path.
+#Note2: Do not add any quotes around the path name.
+#Note2: Do not change the location or the name of this file.
+#Example:
+#CODE_PATH=/home/john-doe/Documents/ebov_pipeline/ebola_i2o/code
+#
+#CODE_PATH: Path to the code sub-directory in the ebola_i2o directory.
+#REF_DATA_PATH: Path to the data sub-directory in the ebola_i2o directory.
+#BLAST_DB_PATH: Path to the directory storing the Blast database.
+#BLAST_DB_NAME: Name of the Blast database.
+#ACC2TAXID_PATH: Path to the nucl.gb.accession2taxid file.
+#NAMES_DMP_PATH: Path to the names.dmp file.
+##########################################################################################################################################
+CODE_PATH=/home/anjan-purkayastha/Documents/openboxbio/FDA/20150527_ebola_chip_duncan_FDA/ebov_pipeline/ebola_i2o/code
+REF_DATA_PATH=/home/anjan-purkayastha/Documents/openboxbio/FDA/20150527_ebola_chip_duncan_FDA/ebov_pipeline/openboxstream_ebov/data
+BLAST_DB_PATH=/home/anjan-purkayastha/Documents/openboxbio/FDA/20150527_ebola_chip_duncan_FDA/ebov_pipeline/openboxstream_ebov/db/filovir_db
+BLAST_DB_NAME=filovir
+ACC2TAXID_PATH=/home/anjan-purkayastha/Documents/openboxbio/FDA/20150527_ebola_chip_duncan_FDA/ebov_pipeline/openboxstream_ebov/db/filovir_db/nucl_gb.accession2taxid
+NAMES_DMP_PATH=/home/anjan-purkayastha/Documents/openboxbio/FDA/20150527_ebola_chip_duncan_FDA/ebov_pipeline/openboxstream_ebov/db/filovir_db/names.dmp

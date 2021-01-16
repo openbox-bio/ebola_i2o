@@ -7,17 +7,23 @@ use File::SortedSeek ':all';
 #This pipeline processes data from the FILO chip
 #
 #
-print "Code Is Processing\n";
-use constant {
-  CODE_PATH => "/home/anjan-purkayastha/Documents/openboxbio/FDA/20150527_ebola_chip_duncan_FDA/ebov_pipeline/openboxstream_ebov/code",
-  EBOV_CHIP_PARENT_CHILD_MAP =>"/home/anjan-purkayastha/Documents/openboxbio/FDA/20150527_ebola_chip_duncan_FDA/ebov_pipeline/openboxstream_ebov/data/ebov_chip_parent_child_map",
-  BLAST_DB_PATH => "/home/anjan-purkayastha/Documents/openboxbio/FDA/20150527_ebola_chip_duncan_FDA/ebov_pipeline/openboxstream_ebov/db/filovir_db",
-  BLAST_DB_NAME => "filovir",
-  MASTER_PATH => "/home/anjan-purkayastha/Documents/openboxbio/FDA/20150527_ebola_chip_duncan_FDA/ebov_pipeline/openboxstream_ebov/data",
-  ACC2TAXID_PATH => "/home/anjan-purkayastha/Documents/openboxbio/FDA/20150527_ebola_chip_duncan_FDA/ebov_pipeline/openboxstream_ebov/db/filovir_db/nucl_gb.accession2taxid",
-  NAMES_DMP_PATH => "/home/anjan-purkayastha/Documents/openboxbio/FDA/20150527_ebola_chip_duncan_FDA/ebov_pipeline/openboxstream_ebov/db/filovir_db/names.dmp"
-};
+#print "Code Is Processing\n";
 
+############################################
+#Read the settings file: ebola_i2o_settings.
+############################################
+my %settings;
+open(F, "./ebola_i2o_settings") or die $!;
+while(<F>){
+  s/#.*//;
+  chomp;
+  if(/\w+/){
+  my @line = split/=/;
+  $line[0] =~ s/^\s+|\s+$//;
+  $line[1] =~ s/^\s+|\s+$//;
+  $settings{$line[0]} = $line[1];
+}
+}
 
 ###########################################################################################################################
 #create a timestamp for execution start time. This timestamp will be added to the final file names as a unique identifier.#
@@ -72,7 +78,8 @@ foreach my $k (keys %aseq){
 my %mult_map_tiles; # a hash of arrays to hold each mapping instance for a given tile. Key= tile id; value= array with sequence of each mapping instance.
 my %cons_seq; # a hash to hold the final consensus sequence.
 my %tilenames; # a hash to hold the name of each tile that is multiply tiled as a subset of other tiles. In this context, it is the child tile; the parent tile being the tile of which a subset is the child tile.
-open(F, EBOV_CHIP_PARENT_CHILD_MAP);
+my $ebov_chip_parent_child_map = $settings{"REF_DATA_PATH"}."/ebov_chip_parent_child_map";
+open(F, $ebov_chip_parent_child_map) or die $!;
 my $header = <F>;
 my $count= 2;
 while(<F>){
@@ -163,7 +170,6 @@ open (W,">$blastInputFile");
 my @filo_keys= grep {/^FILO/} keys %seq;
 foreach my $k (@filo_keys){
       my $seq= $seq{$k};
-      #print W ">".$k,"\n",$seq,"\n";
       $ncount{$k}= ()= $seq=~ /N/g;
       my @runs= split/N+/, $seq;
       my $c3= "";
@@ -182,11 +188,11 @@ foreach my $k (sort {$filo{$b} <=> $filo{$a} } keys %filo){
 close(W);
 
 #Map each required host volume to the correct docker volume. /blastdb,/input, /reference are all directories in the ebola_i2o_tools container.
-my $blastdb_volume_map = BLAST_DB_PATH.":"."\/blastdb";
-my $input_file_volume_map = CODE_PATH.":"."\/input";
-my $reference_volume_map = MASTER_PATH.":"."\/reference";
-my $docker_blast_db = "\/blastdb\/".BLAST_DB_NAME;
-my $docker_input_file = "\/input\/".$blastInputFile;
+my $blastdb_volume_map = $settings{"BLAST_DB_PATH"}.":"."\/blastdb";
+my $input_file_volume_map = $settings{"CODE_PATH"}.":"."\/input";
+my $reference_volume_map = $settings{"REF_DATA_PATH"}.":"."\/reference";
+my $docker_blast_db = "\/blastdb\/".$settings{"BLAST_DB_NAME"};
+my $docker_input_file = "/input/".$blastInputFile;
 
 #Blast each tile against the Ebola sequence database.
 open(NTBLASTRUN,"docker run --rm -v $blastdb_volume_map -v $input_file_volume_map ebola_i2o blastn -task blastn -db $docker_blast_db -query $docker_input_file  -max_target_seqs 3 -num_threads 40 -outfmt \"6 qseqid bitscore evalue sacc\"| ");
@@ -256,7 +262,7 @@ close(V);
 #Ensure that (a) muscle (b) phyML and (c) nwutils are installed.                                                                                                                                                    #
 #####################################################################################################################################################################################################################
 
-my $master_reference_aln_files_list= MASTER_PATH."\/list";
+my $master_reference_aln_files_list= $settings{"REF_DATA_PATH"}."\/list";
 
 open(F, "$master_reference_aln_files_list"); #read in the list of master reference alignments.
 my @aln_list=<F>;
@@ -398,9 +404,9 @@ system ("docker run --rm -v $input_file_volume_map ebola_i2o phyml -s NNI -m GTR
 #The map is stored in the data folder. It is read into a hash $map. In the tree that is the result of phyml, the map is
 #used to substitute the accession name with <accession number>|<strain name>.
 #################################################################################################################################################
-my $path_to_map= MASTER_PATH."\/map";
+my $path_to_map= $settings{"REF_DATA_PATH"}."\/map";
 my %map;
-open (F, $path_to_map);  #path to the Filoviridae accession-name map file.
+open (F, $path_to_map) or die $!;  #path to the Filoviridae accession-name map file.
 while(<F>){
     chomp;
     my @line= split/\t/;
@@ -570,21 +576,21 @@ close(W);
 }
 
 sub getScientificName{
-  open BIG, ACC2TAXID_PATH or die $!;
+  open BIG, $settings{"ACC2TAXID_PATH"} or die $!;
 
   my $string = $_[0];
   my $tell = alphabetic( *BIG, $string );
   my $line = <BIG>;
   close(BIG);
 
-  my @line = split/\t/, $line;
-  my $taxid = $line[2];
+  my @acc2taxid_line = split/\t/, $line;
+  my $taxid = $acc2taxid_line[2];
 
-  open BIG, NAMES_DMP_PATH or die $!;
+  open BIG, $settings{"NAMES_DMP_PATH"} or die $!;
 
    $tell = numeric(*BIG, $taxid);
    $line = <BIG>;
-   my @line = split/\|/, $line;
-   $line[1] =~ s/^\s+|\s+$//g;
-   return $line[1];
+   my @names_dmp_line = split/\|/, $line;
+   $names_dmp_line[1] =~ s/^\s+|\s+$//g;
+   return $names_dmp_line[1];
 }
