@@ -4,7 +4,7 @@ import subprocess
 
 root = Tk()
 root.geometry('500x500')
-#root.withdraw()
+
 
 def fire_pipeline():
 	tool_dict = {'Ebola': '/home/anjan-purkayastha/Documents/openboxbio/FDA/20150527_ebola_chip_duncan_FDA/ebov_pipeline/ebola_i2o/code/ebola_i2o',

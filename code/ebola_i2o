@@ -195,7 +195,7 @@ my $docker_blast_db = "\/blastdb\/".$settings{"BLAST_DB_NAME"};
 my $docker_input_file = "/input/".$blastInputFile;
 
 #Blast each tile against the Ebola sequence database.
-open(NTBLASTRUN,"docker run --rm -v $blastdb_volume_map -v $input_file_volume_map ebola_i2o blastn -task blastn -db $docker_blast_db -query $docker_input_file  -max_target_seqs 3 -num_threads 40 -outfmt \"6 qseqid bitscore evalue sacc\"| ");
+open(NTBLASTRUN,"docker run --rm -v $blastdb_volume_map -v $input_file_volume_map openboxbio/ebola_i2o_tools blastn -task blastn -db $docker_blast_db -query $docker_input_file  -max_target_seqs 3 -num_threads 40 -outfmt \"6 qseqid bitscore evalue sacc\"| ");
 my @ntblastop= <NTBLASTRUN>;
 chomp(@ntblastop);
 
@@ -291,7 +291,7 @@ foreach my $s (sort @seq_list){
             my $out= $s;
             $out =~ s/input\.fst/output\.fst/;
             my $docker_out_file = "/input/".$out; #path to output file within container.
-            system ("docker run --rm -v $input_file_volume_map -v $reference_volume_map ebola_i2o muscle -profile -in1 $docker_input_profile -in2 $docker_input_seq -out $docker_out_file");
+            system ("docker run --rm -v $input_file_volume_map -v $reference_volume_map openboxbio/ebola_i2o_tools muscle -profile -in1 $docker_input_profile -in2 $docker_input_seq -out $docker_out_file");
             push(@alignment_files_list, $out);
             system("rm -rf $s");
        }
@@ -397,7 +397,7 @@ close(W);
 #Run phyML#
 ###########
 my $docker_master_name2 = "/input/".$master_name2;
-system ("docker run --rm -v $input_file_volume_map ebola_i2o phyml -s NNI -m GTR -i $docker_master_name2 --quiet");
+system ("docker run --rm -v $input_file_volume_map openboxbio/ebola_i2o_tools phyml -s NNI -m GTR -i $docker_master_name2 --quiet");
 
 #################################################################################################################################################
 #This block of code substitutes the accession number with the string <accession number>|<strain name>. This improves the readability of the tree.
@@ -433,7 +433,7 @@ close(W);
 ###################################################################################################################
 my $docker_newickFile = "\/input\/".$newickFile;
 
-open(LABELS, "docker run --rm -v $input_file_volume_map ebola_i2o nw_labels -I $docker_newickFile |"); #use nw_labels command to get the ordered nodes.
+open(LABELS, "docker run --rm -v $input_file_volume_map openboxbio/ebola_i2o_tools nw_labels -I $docker_newickFile |"); #use nw_labels command to get the ordered nodes.
 my @ordered_nodes = <LABELS>;
 chomp(@ordered_nodes);
 @ordered_nodes= reverse(@ordered_nodes);
@@ -574,6 +574,11 @@ print V $SAMPLE,"\n";                              # print input file name into 
 close(W);
 }
 }
+
+#######################################################################################
+#getScientificName retrieves the scientific name associated with an input accession_id.
+#It needs access to the files: nucl_gb.accession2taxid and names.dmp
+#######################################################################################
 
 sub getScientificName{
   open BIG, $settings{"ACC2TAXID_PATH"} or die $!;
