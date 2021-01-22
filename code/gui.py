@@ -1,6 +1,7 @@
 from tkinter import *
 from tkinter import filedialog
 import subprocess
+import time
 
 root = Tk()
 root.geometry('500x500')
@@ -11,14 +12,19 @@ def fire_pipeline():
 			  }
 
 	my_list = list(root.tk.splitlist(root.filenames))
-	myLabel = Label(root, text = clicked.get())
+	myLabel = Label(root, text = 'Selected Pipeline:' + clicked.get(), fg = 'blue')
 	tool = clicked.get()
 	myLabel.pack()
 	for file in my_list :
-		# myLabel = Label(root, text = label)
-		# myLabel.pack()
-		# print(label)
-		subprocess.run([tool_dict[tool], file], stdout = subprocess.DEVNULL)
+		myLabel = Label(root, text = 'Selected File:'+file, fg = '#ff8c1a')
+		myLabel.pack()
+		runLabel = Label(root, text = 'Pipeline Running.....')
+		runLabel.pack()
+		run_output = subprocess.run([tool_dict[tool], file], capture_output = False)
+		if run_output.returncode == 0:
+			runLabel.destroy()
+			doneLabel = Label(root, text = 'Run Complete.')
+			doneLabel.pack()
 
 
 def select_files():
