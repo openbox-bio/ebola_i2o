@@ -3,17 +3,12 @@ use strict;
 use File::Path qw/make_path/;
 use File::SortedSeek ':all';
 
-#
-#This pipeline processes data from the FILO chip
-#
-#
-#print "Code Is Processing\n";
-
 ############################################
 #Read the settings file: ebola_i2o_settings.
 ############################################
 my %settings;
-open(F, "./ebola_i2o_settings") or die $!;
+my $settings_file_path = join"\/", ($ENV{CODE_PATH}, 'ebola_i2o_settings');
+open(F, $settings_file_path) or die $!;
 while(<F>){
   s/#.*//;
   chomp;
@@ -24,6 +19,7 @@ while(<F>){
   $settings{$line[0]} = $line[1];
 }
 }
+#exit;
 
 ###########################################################################################################################
 #create a timestamp for execution start time. This timestamp will be added to the final file names as a unique identifier.#
@@ -43,8 +39,11 @@ my $path_to_input_file = $ARGV[0];
 
 my @path_to_input_file = split/\//, $path_to_input_file;
 
-my $SAMPLE = pop(@path_to_input_file);
+my $file_name = pop(@path_to_input_file); #extract the file name.
+my $SAMPLE = $path_to_input_file;
 my $INPUT_PATH = join "/", @path_to_input_file;
+# print $path_to_input_file;
+# exit;
 
 open (F, $path_to_input_file) || die "cannot open file to read:$!";
 
@@ -69,6 +68,7 @@ foreach my $k (keys %aseq){
   #print ">",$k,"\n",$seq{$k},"\n"; #test code to ensure that tile sequences are stored correctly in the %seq hash.
 }
 
+
 #################################################################################################################################################################################
 #This code block creates a consensus tile sequences for those sequences that have been multiply tiled. See  /home/Duncan.Lab/filovirus_pipeline/data/ebov_chip_parent_child_map
 #for tile mapping details.
@@ -79,6 +79,9 @@ my %mult_map_tiles; # a hash of arrays to hold each mapping instance for a given
 my %cons_seq; # a hash to hold the final consensus sequence.
 my %tilenames; # a hash to hold the name of each tile that is multiply tiled as a subset of other tiles. In this context, it is the child tile; the parent tile being the tile of which a subset is the child tile.
 my $ebov_chip_parent_child_map = $settings{"REF_DATA_PATH"}."/ebov_chip_parent_child_map";
+#print $ebov_chip_parent_child_map;
+#exit;
+
 open(F, $ebov_chip_parent_child_map) or die $!;
 my $header = <F>;
 my $count= 2;
@@ -154,10 +157,11 @@ foreach my $k (keys %mult_map_tiles){
 #Count the number of Ns in the tile sequence. Print Ebola tiles (FILO...) sequences in a temp file
 #for BLASTing.
 ######################################################################################################
-$SAMPLE=~ s/\.txt//;
-my $indices = rindex($SAMPLE,"/");
-$SAMPLE= substr $SAMPLE, $indices+1, length($SAMPLE)-$indices;
-my $STRAIN=$SAMPLE;
+$SAMPLE=~ s/\.(.*)$//;
+#my $indices = rindex($SAMPLE,"/");
+#$SAMPLE= substr $SAMPLE, $indices+1, length($SAMPLE)-$indices;
+my $STRAIN=$file_name;
+$STRAIN =~ s/\.(.*)$//;
 my %c3; #hash to store C3 scores;
 my %ncount; #hash to store N counts.
 my $blastInputFile= $SAMPLE."\.blast\.in\.fst"; #query file for BLAST.
@@ -189,10 +193,14 @@ close(W);
 
 #Map each required host volume to the correct docker volume. /blastdb,/input, /reference are all directories in the ebola_i2o_tools container.
 my $blastdb_volume_map = $settings{"BLAST_DB_PATH"}.":"."\/blastdb";
-my $input_file_volume_map = $settings{"CODE_PATH"}.":"."\/input";
+my $input_file_volume_map = $INPUT_PATH.":"."\/input";
 my $reference_volume_map = $settings{"REF_DATA_PATH"}.":"."\/reference";
 my $docker_blast_db = "\/blastdb\/".$settings{"BLAST_DB_NAME"};
-my $docker_input_file = "/input/".$blastInputFile;
+
+#Map the blast input file to the correct docker volume.
+my @path_to_blastInputFile = split/\//, $blastInputFile;
+my $blastInputFile4Docker = pop(@path_to_blastInputFile);
+my $docker_input_file = "/input/".$blastInputFile4Docker;
 
 #Blast each tile against the Ebola sequence database.
 open(NTBLASTRUN,"docker run --rm -v $blastdb_volume_map -v $input_file_volume_map openboxbio/ebola_i2o_tools blastn -task blastn -db $docker_blast_db -query $docker_input_file  -max_target_seqs 3 -num_threads 40 -outfmt \"6 qseqid bitscore evalue sacc\"| ");
@@ -200,7 +208,7 @@ my @ntblastop= <NTBLASTRUN>;
 chomp(@ntblastop);
 
 open (W,">$blastOutFile");
-print W "Sample:", $SAMPLE,"\n\n";
+print W "Sample:", $file_name,"\n\n";
 print W "Pipeline Execution started on:", $timestamp,"\n\n";
 print W "Tile ID","\t","C3 Score","\t","Bit-score","\t","E-value","\t","Accession number","\t","Scientific Name","\n";
 foreach my $op (@ntblastop){
@@ -219,6 +227,7 @@ if ($count_of_tiles_with_C3_gte_20 == 0){
 }
 close(W);
 
+exit;
 
 ################################################################################
 #Second BLAST run to produce the detailed HTML report. Shut-off in this version
@@ -287,13 +296,17 @@ foreach my $s (sort @seq_list){
        $s_name=~ s/\.input\.fst|$SAMPLE\.//g;
        if($a_name eq $s_name){
             my $docker_input_profile= "/reference/".$a; #path to input_profile file within container.
-            my $docker_input_seq = "/input/".$s; #path to input_seq file within container.
-            my $out= $s;
+            my @path_to_input_aln_file = split/\//, $s;
+            my $alnInputFile4Docker = pop(@path_to_input_aln_file);
+            my $docker_input_seq = "/input/".$alnInputFile4Docker;
+            my $out= $alnInputFile4Docker;
             $out =~ s/input\.fst/output\.fst/;
             my $docker_out_file = "/input/".$out; #path to output file within container.
             system ("docker run --rm -v $input_file_volume_map -v $reference_volume_map openboxbio/ebola_i2o_tools muscle -profile -in1 $docker_input_profile -in2 $docker_input_seq -out $docker_out_file");
+            push(@path_to_input_aln_file, $out);
+            $out = join("\/", @path_to_input_aln_file);
             push(@alignment_files_list, $out);
-            system("rm -rf $s");
+            #system("rm -rf $s");
        }
     }
 }
@@ -396,7 +409,9 @@ close(W);
 ###########
 #Run phyML#
 ###########
-my $docker_master_name2 = "/input/".$master_name2;
+my @path_to_phyml_input_file = split/\//, $master_name2;
+my $phymlInputFile4Docker = pop(@path_to_phyml_input_file);
+my $docker_master_name2 = "/input/".$phymlInputFile4Docker;
 system ("docker run --rm -v $input_file_volume_map openboxbio/ebola_i2o_tools phyml -s NNI -m GTR -i $docker_master_name2 --quiet");
 
 #################################################################################################################################################
@@ -426,12 +441,14 @@ open(W, ">$newickFile2");
 print W $n;
 close(F);
 close(W);
-
 ###################################################################################################################
 #This block of code orders the sequences in the master alignment file in the same order as the phylogenetic tree.
-#It uses newick_utils
+#It uses newick_utilss/\.(.*)$//;
 ###################################################################################################################
-my $docker_newickFile = "\/input\/".$newickFile;
+
+my @path_to_newickFile = split/\//,$newickFile;
+my $newickFileName = pop(@path_to_newickFile);
+my $docker_newickFile = "\/input\/".$newickFileName;
 
 open(LABELS, "docker run --rm -v $input_file_volume_map openboxbio/ebola_i2o_tools nw_labels -I $docker_newickFile |"); #use nw_labels command to get the ordered nodes.
 my @ordered_nodes = <LABELS>;
@@ -473,7 +490,7 @@ system("rm -rf $newickFile");
 #This code block creates a directory with the same name as the sample; subdirectories, alignments and phylogeny, to store alignment and phylogeny files are created. All result files and the input_tile_files_list
 #and the input sample file are stored in the directory.
 ######################################################################################################################################################################################################################
-my $RESULTS= $INPUT_PATH."\/".$SAMPLE."_".$label; #assign a name to the results directory.
+my $RESULTS= $INPUT_PATH."\/".$STRAIN."_".$label; #assign a name to the results directory.
 make_path("$RESULTS");
 my $ALN= "$RESULTS\/alignments";
 my $PHY= "$RESULTS\/phylogeny";
@@ -496,7 +513,7 @@ my @list= glob("$fileNamePattern");
 foreach my $l (@list){
   system("mv $l $RESULTS");
 }
-system("mv $path_to_input_file $RESULTS");  #move input file to the RESULTS folder.
+#system("mv $path_to_input_file $RESULTS");  #move input file to the RESULTS folder.
 exit;
 
 
@@ -540,7 +557,7 @@ sub make_consensus{
   }
 
 my $cons= join ("", @cons);
-#print $_[1],"\n",$cons, "\n\n";
+#print $_[1],"\n",$cons, "\n\n"; #test code
 return $cons;
 }
 
