@@ -19,7 +19,6 @@ while(<F>){
   $settings{$line[0]} = $line[1];
 }
 }
-#exit;
 
 ###########################################################################################################################
 #create a timestamp for execution start time. This timestamp will be added to the final file names as a unique identifier.#
@@ -40,10 +39,15 @@ my $path_to_input_file = $ARGV[0];
 my @path_to_input_file = split/\//, $path_to_input_file;
 
 my $file_name = pop(@path_to_input_file); #extract the file name.
-my $SAMPLE = $path_to_input_file;
-my $INPUT_PATH = join "/", @path_to_input_file;
-# print $path_to_input_file;
-# exit;
+my $INPUT_PATH = join "/", @path_to_input_file; #extract path name to input file.
+$file_name =~ s/\.(.*)$//;
+my $STRAIN=$file_name;
+push(@path_to_input_file, $file_name);
+my $SAMPLE = join "/", @path_to_input_file;
+
+# print $INPUT_PATH,"\n";
+# print $SAMPLE,"\n";
+# print $STRAIN,"\n";
 
 open (F, $path_to_input_file) || die "cannot open file to read:$!";
 
@@ -157,11 +161,7 @@ foreach my $k (keys %mult_map_tiles){
 #Count the number of Ns in the tile sequence. Print Ebola tiles (FILO...) sequences in a temp file
 #for BLASTing.
 ######################################################################################################
-$SAMPLE=~ s/\.(.*)$//;
-#my $indices = rindex($SAMPLE,"/");
-#$SAMPLE= substr $SAMPLE, $indices+1, length($SAMPLE)-$indices;
-my $STRAIN=$file_name;
-$STRAIN =~ s/\.(.*)$//;
+
 my %c3; #hash to store C3 scores;
 my %ncount; #hash to store N counts.
 my $blastInputFile= $SAMPLE."\.blast\.in\.fst"; #query file for BLAST.
@@ -169,8 +169,8 @@ my $blastOutFile= $SAMPLE."\.blast\.report";
 my $detailedBlastOutFile= $SAMPLE."\.blast\.detailed\.report\.html";
 my $count_of_tiles_with_C3_gte_20 = 0; #a counter to keep track of number of tiles with C3 score gte 20.
 my %filo;
-open (W,">$blastInputFile");
 
+open (W,">$blastInputFile");
 my @filo_keys= grep {/^FILO/} keys %seq;
 foreach my $k (@filo_keys){
       my $seq= $seq{$k};
@@ -226,8 +226,6 @@ if ($count_of_tiles_with_C3_gte_20 == 0){
   exit;
 }
 close(W);
-
-exit;
 
 ################################################################################
 #Second BLAST run to produce the detailed HTML report. Shut-off in this version
@@ -490,7 +488,7 @@ system("rm -rf $newickFile");
 #This code block creates a directory with the same name as the sample; subdirectories, alignments and phylogeny, to store alignment and phylogeny files are created. All result files and the input_tile_files_list
 #and the input sample file are stored in the directory.
 ######################################################################################################################################################################################################################
-my $RESULTS= $INPUT_PATH."\/".$STRAIN."_".$label; #assign a name to the results directory.
+my $RESULTS= $settings{"RESULTS_PATH"}."\/".$STRAIN."_".$label; #assign a name to the results directory.
 make_path("$RESULTS");
 my $ALN= "$RESULTS\/alignments";
 my $PHY= "$RESULTS\/phylogeny";

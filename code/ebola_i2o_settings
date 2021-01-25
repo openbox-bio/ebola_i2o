@@ -13,9 +13,10 @@
 #ACC2TAXID_PATH: Path to the nucl.gb.accession2taxid file.
 #NAMES_DMP_PATH: Path to the names.dmp file.
 ##########################################################################################################################################
-CODE_PATH=/home/anjan-purkayastha/Documents/openboxbio/FDA/20150527_ebola_chip_duncan_FDA/ebov_pipeline/ebola_i2o/code
-REF_DATA_PATH=/home/anjan-purkayastha/Documents/openboxbio/FDA/20150527_ebola_chip_duncan_FDA/ebov_pipeline/openboxstream_ebov/data
-BLAST_DB_PATH=/home/anjan-purkayastha/Documents/openboxbio/FDA/20150527_ebola_chip_duncan_FDA/ebov_pipeline/openboxstream_ebov/db/filovir_db
-BLAST_DB_NAME=filovir
-ACC2TAXID_PATH=/home/anjan-purkayastha/Documents/openboxbio/FDA/20150527_ebola_chip_duncan_FDA/ebov_pipeline/openboxstream_ebov/db/filovir_db/nucl_gb.accession2taxid
-NAMES_DMP_PATH=/home/anjan-purkayastha/Documents/openboxbio/FDA/20150527_ebola_chip_duncan_FDA/ebov_pipeline/openboxstream_ebov/db/filovir_db/names.dmp
+CODE_PATH=/home/Duncan.Lab/openboxbio/ebola_i2o/code
+REF_DATA_PATH=/home/Duncan.Lab/openboxbio/ebola_i2o/data
+BLAST_DB_PATH=/home/Duncan.Lab/openboxbio/db/ncbi
+BLAST_DB_NAME=filoviridae.sequences.fasta
+ACC2TAXID_PATH=/home/Duncan.Lab/openboxbio/db/ncbi/nucl_gb.accession2taxid
+NAMES_DMP_PATH=/home/Duncan.Lab/openboxbio/db/ncbi/names.dmp
+RESULTS_PATH=/home/Duncan.Lab/filovirus_pipeline_output
