@@ -1,5 +1,5 @@
-![openbox logo](https://github.com/openbox-bio/assets/blob/master/openboxbio_logo.png, width = 500, height = 250)
-### Welcome to the ebola_i2o Pipeline Repo.
+![openbox logo](https://github.com/openbox-bio/assets/blob/master/openboxbio_logo.png)
+### <center>Welcome to the ebola_i2o Pipeline Repo.</center>
 
 #### Introduction
 The ebola_i2o pipeline has been built to process the output from the EBOV chip designed by the Duncan Lab.
