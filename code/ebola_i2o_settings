@@ -1,21 +1,25 @@
 #########################################################################################################################################
 #This settings file stores the path to a set of key files and directories for ebola_i2o.
 #NOTE1: All paths must be entered as a full path.
-#Note2: Do not add any quotes around the path name.
-#Note2: Do not change the location or the name of this file.
+#NOTE2: Do not add any quotes around the path name.
+#NOTE3: Do not change the name of this file.
 #Example:
-#CODE_PATH=/home/john-doe/Documents/ebov_pipeline/ebola_i2o/code
+#REF_DATA_PATH=/home/john_doe/john_doe_lab_pipelines/ebola_i2o/data
 #
-#CODE_PATH: Path to the code sub-directory in the ebola_i2o directory.
+#Here are the paths to set in the settings file:
 #REF_DATA_PATH: Path to the data sub-directory in the ebola_i2o directory.
 #BLAST_DB_PATH: Path to the directory storing the Blast database.
 #BLAST_DB_NAME: Name of the Blast database.
 #ACC2TAXID_PATH: Path to the nucl.gb.accession2taxid file.
 #NAMES_DMP_PATH: Path to the names.dmp file.
+#RESULTS_PATH: Path to the folder that stores output from ebola_i2o. For each sample that is run, the pipeline creates a subfolder
+#(name format = <Sample_Name>_YYYY_MM_DD_HH_MM_SS) here to store all the output files.
+#NOTE4: The paths below are only examples.Please replace them with the correct paths on your machine. 
 ##########################################################################################################################################
-CODE_PATH=/home/anjan-purkayastha/Documents/openboxbio/FDA/20150527_ebola_chip_duncan_FDA/ebov_pipeline/ebola_i2o/code
-REF_DATA_PATH=/home/anjan-purkayastha/Documents/openboxbio/FDA/20150527_ebola_chip_duncan_FDA/ebov_pipeline/openboxstream_ebov/data
-BLAST_DB_PATH=/home/anjan-purkayastha/Documents/openboxbio/FDA/20150527_ebola_chip_duncan_FDA/ebov_pipeline/openboxstream_ebov/db/filovir_db
-BLAST_DB_NAME=filovir
-ACC2TAXID_PATH=/home/anjan-purkayastha/Documents/openboxbio/FDA/20150527_ebola_chip_duncan_FDA/ebov_pipeline/openboxstream_ebov/db/filovir_db/nucl_gb.accession2taxid
-NAMES_DMP_PATH=/home/anjan-purkayastha/Documents/openboxbio/FDA/20150527_ebola_chip_duncan_FDA/ebov_pipeline/openboxstream_ebov/db/filovir_db/names.dmp
+REF_DATA_PATH=/home/john_doe/openboxbio/ebola_i2o/data
+BLAST_DB_PATH=/home/john_doe/openboxbio/db/
+BLAST_DB_NAME=filoviridae.sequences.fasta
+ACC2TAXID_PATH=/home/john_doe/openboxbio/db/ncbi/nucl_gb.accession2taxid
+NAMES_DMP_PATH=/home/john_doe/openboxbio/db/ncbi/names.dmp
+RESULTS_PATH=/home/john_doe/all_lab_results/filovirus_pipeline_output
+
