@@ -1,3 +1,4 @@
+![openbox logo](https://github.com/openbox-bio/assets/blob/master/openboxbio_logo.png)
 ### Welcome to the ebola_i2o Pipeline Repo.
 
 #### Introduction
