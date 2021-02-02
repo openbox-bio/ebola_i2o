@@ -1,5 +1,5 @@
 
-<img src="https://github.com/openbox-bio/assets/blob/master/openboxbio_logo.png" width="250" height="70">
+<img src="https://github.com/openbox-bio/assets/blob/master/openboxbio_logo.png" width="250" height="60">
 
 ### <center>Welcome to the ebola_i2o Pipeline Repo.</center>
 
