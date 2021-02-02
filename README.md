@@ -1,4 +1,4 @@
-![openbox logo]<img src="https://github.com/openbox-bio/assets/blob/master/openboxbio_logo.png" width="500" height="250">
+<img src="https://github.com/openbox-bio/assets/blob/master/openboxbio_logo.png" width="100" height="40">
 ### <center>Welcome to the ebola_i2o Pipeline Repo.</center>
 
 #### Introduction
