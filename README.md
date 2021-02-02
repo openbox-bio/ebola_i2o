@@ -1,5 +1,9 @@
+<<<<<<< HEAD
 <img src="https://github.com/openbox-bio/assets/blob/master/openboxbio_logo.png" width="300" height="50">
 
+=======
+<img src="https://github.com/openbox-bio/assets/blob/master/openboxbio_logo.png" width="100" height="40">
+>>>>>>> d0c3e178d77ee5ba10a67fca6ffa9ddd533ee213
 ### <center>Welcome to the ebola_i2o Pipeline Repo.</center>
 
 #### Introduction
