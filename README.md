@@ -10,30 +10,30 @@ Briefly, the chip generates sequence from 13 regions of the Ebola virus genome s
 To run this pipeline you will need to install:
 1. [Git](https://github.com/git-guides/install-git) and [Docker](https://docs.docker.com/get-docker/)
 2. the following Perl modules:
-    2a. File::Path
-    2b. File::SortedSeek
-    2c. hint: `sudo perl -MCPAN -e 'install <module_name>'`
+    * File::Path
+    * File::SortedSeek
+    * hint: `sudo perl -MCPAN -e 'install <module_name>'`
 3. the following:
-   3a. a Blast database. You can use the nt database from NCBI. Alternatively you can create your own database of Filovirus nucleotide sequences.
-   3b. The acc2taxid file from NCBI.
-   3c. The names.dmp file from NCBI.
+   * a Blast database. You can use the nt database from NCBI. Alternatively you can create your own database of Filovirus nucleotide sequences.
+   * The acc2taxid file from NCBI.
+   * The names.dmp file from NCBI.
 
 #### Usage
 1. Clone this repo to your local machine: `git clone https://github.com/openbox-bio/ebola_i2o.git`.
 2. The `ebola_i2o` directory has the following subdirectories
->ebola_i2o
->|
->|--> code (the ebola_i2o code and ebola_i2o settings file)
->|--> data (all reference strain multiple sequence alignments)
->|--> db (empty. You can store your databases, acc2taxid and names.dmp files here.)
+ebola_i2o
+|
+|--> code (the ebola_i2o code and ebola_i2o settings file)
+|--> data (all reference strain multiple sequence alignments)
+|--> db (empty. You can store your databases, acc2taxid and names.dmp files here.)
 
 3. Configure the path variables in file ebola_i2o_settngs file. This settings file stores the path to a set of key files and directories for ebola_i2o.
-  3a. REF_DATA_PATH: Path to the data sub-directory in the ebola_i2o directory.
-  3b. BLAST_DB_PATH: Path to the directory storing the Blast database.
-  3c. BLAST_DB_NAME: Name of the Blast database.
-  3d. ACC2TAXID_PATH: Path to the nucl.gb.accession2taxid file.
-  3e. NAMES_DMP_PATH: Path to the names.dmp file.
-  3f. RESULTS_PATH: Path to the folder that stores output from ebola_i2o. For each sample that is run, the pipeline creates a subfolder
+  * REF_DATA_PATH: Path to the data sub-directory in the ebola_i2o directory.
+  * BLAST_DB_PATH: Path to the directory storing the Blast database.
+  * BLAST_DB_NAME: Name of the Blast database.
+  * ACC2TAXID_PATH: Path to the nucl.gb.accession2taxid file.
+  * NAMES_DMP_PATH: Path to the names.dmp file.
+  * RESULTS_PATH: Path to the folder that stores output from ebola_i2o. For each sample that is run, the pipeline creates a subfolder
       (name format = <Sample_Name>\_YYYY_MM_DD_HH_MM_SS) here to store all the output files.
 4. Pull the following docker image `openboxbio/ebola_i2o_tools:latest`
     hint: `docker pull openboxbio/ebola_i2o_tools:latest`
