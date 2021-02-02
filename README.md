@@ -23,9 +23,9 @@ To run this pipeline you will need to install:
 #### Usage
 1. Clone this repo to your local machine: `git clone https://github.com/openbox-bio/ebola_i2o.git`.
 2. The `ebola_i2o` directory has the following subdirectories:
-><br>_ebola_i2o_
-><br>|-->_code_ (stores the ebola_i2o code and ebola_i2o settings file)
-><br>|-->_data_ (stores all reference strain multiple sequence alignments)
+<br>_ebola_i2o_
+<br>|-->_code_ (stores the ebola_i2o code and ebola_i2o settings file)
+<br>|-->_data_ (stores all reference strain multiple sequence alignments)
 
 3. Configure the path variables in file ebola_i2o_settngs file. This settings file stores the path to a set of key files and directories for ebola_i2o.
   * REF_DATA_PATH: Path to the data sub-directory in the ebola_i2o directory.
@@ -36,7 +36,7 @@ To run this pipeline you will need to install:
   * RESULTS_PATH: Path to the folder that stores output from ebola_i2o. For each sample that is run, the pipeline creates a subfolder
       (name format = <Sample_Name>\_YYYY_MM_DD_HH_MM_SS) here to store all the output files.
 4. Pull the following docker image `openboxbio/ebola_i2o_tools:latest`
-    hint: `docker pull openboxbio/ebola_i2o_tools:latest`
+    * hint: `docker pull openboxbio/ebola_i2o_tools:latest`
 
 5. Set environmental variable `CODE_PATH` to the absolute path to the `ebola_i2o_settings` file. In Ubuntu this can be done by adding `export CODE_PATH=<path_to_ebola_i2o_settings_file>` in the .profile file.
 
