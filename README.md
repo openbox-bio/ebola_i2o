@@ -17,8 +17,8 @@ To run this pipeline you will need to install:
     * hint: `sudo perl -MCPAN -e 'install <module_name>'`
 3. the following:
    * a Blast database. You can use the nt database from NCBI. Alternatively you can create your own database of Filovirus nucleotide sequences.
-   * The [nucl_gb.accession2taxid.gz](ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/nucl_gb.accession2taxid.gz) file from NCBI. Be sure to unzip file before use.
-   * The names.dmp file from the [taxdump](ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz) file-set. Be sure to unzip file before use.
+   * The nucl_gb.accession2taxid.gz from `ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/nucl_gb.accession2taxid.gz`. Be sure to unzip file before use.
+   * The names.dmp file from the taxdump.tar.gz file-set at `ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz`. Be sure to unzip file before use.
 
 #### Usage
 1. Clone this repo to your local machine: `git clone https://github.com/openbox-bio/ebola_i2o.git`.
@@ -47,4 +47,4 @@ ebola_i2o
 Important:
 1. Path names should have no spaces in them. Good folder name: `data_folder`. Bad folder name: `data folder`.
 2. Please ensure that the name of the input file is of the following format: <test_strain_name>.txt, where test_strain_name is **no longer than ten characters**.
-3. _Disclaimer:_ This pipeline has been tested on Ubnutu. It should, in principle, work on all flavors of Unix. Please reach me at anjan.purkayastha@gmail.com to report problems or bugs.
+3. **Disclaimer:** This pipeline has been tested on Ubnutu. It should, in principle, work on all flavors of Unix. Please mail me at anjan.purkayastha@gmail.com to report problems or bugs.
