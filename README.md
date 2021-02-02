@@ -23,10 +23,10 @@ To run this pipeline you will need to install:
 #### Usage
 1. Clone this repo to your local machine: `git clone https://github.com/openbox-bio/ebola_i2o.git`.
 2. The `ebola_i2o` directory has the following subdirectories
-<br>ebola_i2o
-<br>|--> code (the ebola_i2o code and ebola_i2o settings file)
-<br>|--> data (all reference strain multiple sequence alignments)
-<br>|--> db (empty. You can store your databases, acc2taxid and names.dmp files here.)
+><br>ebola_i2o
+><br>|--> code (the ebola_i2o code and ebola_i2o settings file)
+><br>|--> data (all reference strain multiple sequence alignments)
+><br>|--> db (empty. You can store your databases, acc2taxid and names.dmp files here.)
 
 3. Configure the path variables in file ebola_i2o_settngs file. This settings file stores the path to a set of key files and directories for ebola_i2o.
   * REF_DATA_PATH: Path to the data sub-directory in the ebola_i2o directory.
