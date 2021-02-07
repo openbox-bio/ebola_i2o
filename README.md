@@ -4,7 +4,7 @@
 ### Welcome to the ebola_i2o Pipeline Repo.
 
 #### Introduction
-The ebola_i2o pipeline has been built to process the output from the EBOV chip designed by the Duncan Lab.
+The ebola_i2o pipeline has been built to process the output from the EBOV chip, designed by the Duncan Lab, at the Center For Biologics Evaluation and Research ([CBER](https://www.fda.gov/about-fda/fda-organization/center-biologics-evaluation-and-research-cber)), FDA.
 EBOV has been designed to type strains of the Ebola virus using a Multi-Locus Subtyping (MLST) strategy.
 Briefly, the chip generates sequence from 13 regions of the Ebola virus genome sequence. Generated sequences are aligned with the corresponding regions from 149 reference Ebola strains with know strain type. A phylogenetic tree derived from the concatenated alignment, across the 13 segments, allows one to establish the evolutionary relationships between the test strain and the reference strains.
 
