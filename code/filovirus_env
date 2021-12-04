@@ -2,13 +2,13 @@
 # from dotenv import load_dotenv
 # load_dotenv()
 EMAIL=openboxbio@gmail.com
-NCBI_API_KEY=4fd7955af942356cb853dc296d902996e408
+NCBI_API_KEY=<please email me for the NCBI API Key>
 QUERY=txid11266[Organism:exp]
 LOG=/home/anjan-purkayastha/Documents/openboxbio/FDA/20150527_ebola_chip_duncan_FDA/20200926_ebov_pipeline_enhancements/data/db/filoviridae.db.update.log
 #DB=test.fasta
 DB=/home/anjan-purkayastha/Documents/openboxbio/FDA/20150527_ebola_chip_duncan_FDA/20200926_ebov_pipeline_enhancements/data/db/filoviridae.fasta
 WEEKLY_DOWNLOAD_FILE=filoviridae.weekly.download.fasta
 DB_PROTEIN=coronaviridae.proteins.fasta
-APP_PWD=zcddhoghdtfzxlij
+APP_PWD=<please email me for the application password> 
 APP_EMAIL=database.update.reporter@gmail.com
 SEND_TO=anjan.purkayastha@gmail.com

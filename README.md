@@ -51,5 +51,5 @@ Important:
 1. Ensure that the following Python packages are installed in your environment: `biopython`, `python-dotenv`, `pathlib`
 2. In your BLAST database folder create a file, that will serve as the log file for the program.
   * hint: `touch filoviridae.db.log`
-3. Open the environment file ebola_env in a text editor, specify the absolute path of the filovirus database using the `DB` environment variable; specify the path of the log file created in step 2, using the `LOG` environment variable. *Please do not alter any of the other variables*.
+3. Open the environment file ebola_env in a text editor, specify the absolute path of the filovirus database using the `DB` environment variable; specify the path of the log file created in step 2, using the `LOG` environment variable. Email me at anjan.purkayastha@gmail.com for the API KEY and APPLICATION PASSWORD. Enter these variable values.  *Do not alter any of the other variables*.
 4. To create a Filovirus database run `python <path_to_create_blast_nucl_database.py> -e <path_to_filovirus_env> -t create`
